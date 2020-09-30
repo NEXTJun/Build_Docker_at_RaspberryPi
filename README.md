@@ -1,4 +1,4 @@
-# Docker Project in Raspberry Pi
+# Docker Project on Raspberry Pi
 
 
 ## 一、 前言
@@ -143,7 +143,7 @@ ifconfig
 
 ---
 
-## 二、 Docker基本操作
+## 三、 Docker基本操作
 
 ### (一) Docker介紹
 要維持軟體環境的一致性是很困難的是, 在社群分享專案時, 時常會因為別人的電腦少裝package或設定有誤, 導致重現困難, 如果使用虛擬機的話, 可以確立一個相同的執行環境。但傳統上的虛擬機, 建構環境上需要從硬體層開始虛擬化, 往往構建出的image相當大, 運行起來也很耗CPU資源。
@@ -172,12 +172,13 @@ Docker有幾個基礎物件概念
 
 ### (二) Docker指令介紹
 由於docker主要還是用cli操作, 這邊記錄下常用的幾個指令
-*  [info - 查找](#info)
-*  [ls - 列舉](#ls)
-*  [delete - 刪除](#delete)
-*  [create - 建立](#create)
+*  [info - 查找](#info-查找)
+*  [ls - 列舉](#ls-列舉)
+*  [delete - 刪除](#delete-刪除)
+*  [create - 建立](#create-建立)
+*  [operate - 操作](#operate-操作)
 
-### info
+### info 查找
 #### (1) 查看版本號
 ```shell
 docker version
@@ -197,7 +198,7 @@ docker search [image名稱]
 ```shell
 docker pull [image名稱]
 ```
-### ls
+### ls 列舉
 #### (1) 列出Local內存在的Image
 ```shell
 docker image ls
@@ -213,7 +214,7 @@ docker ps
 ```
 `-a` 列出包含已停止的所有存在
 
-### delete
+### delete 刪除
 #### (1) 刪除Local內存在的Image
 ```shell
 docker rmi [image名稱]
@@ -235,7 +236,7 @@ or
 docker image rm $(docker images -q)
 ```
 
-### create
+### create 建立
 #### (1) 建立並啟動Container
 ```shell
 docker run [Image]
@@ -258,7 +259,7 @@ Example:
 
 `--name` 設定container的名稱, 用法為 `--name [名稱]`
 
-`/bin/bash` 帶此參數後, 可進入容器內的cli進行互動, 而非執行image預設的指令, 可使用`Ctrl+D`或`exit`離開
+`/bin/bash`或`bash` 帶此參數後, 可進入容器內的cli進行互動, 而非執行image預設的指令, 可使用`Ctrl+D`或`exit`離開
 
 #### (2) 建立但不啟動Container
 ```shell
@@ -267,6 +268,122 @@ docker create [image]
 
 #### (3) 根據該目錄底下, 名為Dockerfile的設定, 建立起Image
 ```shell
-docker build .
+docker build [Dockerfile位置]
 ```
+Example: 
+
+`docker build -t nginx:test .`
+
 `-t, --tag=[名稱]` 為image命名
+
+### operate 操作
+#### (1) 啟動已建立的Container
+```shell
+docker start [container名稱]
+```
+
+#### (2) 停止已建立的Container
+```shell
+docker stop [container名稱]
+```
+
+#### (3) 重啟已建立的Container
+```shell
+docker restart [container名稱]
+```
+
+#### (4) 強制停止已建立的Container
+```shell
+docker kill [container名稱]
+```
+
+#### (5) 重新命名已建立的Container
+```shell
+docker rename [container舊名稱] [container新名稱]
+```
+
+#### (6) 複製檔案至已建立的Container
+```shell
+docker cp [本機端檔案位置] [container名稱]:[container內檔案放置位置]
+```
+
+#### (7) 從外部操作運行中的Container
+```shell
+docker exec [container名稱] [command]
+```
+Example: 
+
+`docker exec -it 4103ef793ded bash`
+            
+`-it` 啟動後可使用互動模式
+
+`/bin/bash`或`bash` 帶此參數後, 可進入容器內的cli進行互動, 可使用`Ctrl+D`或`exit`離開
+
+### (三) Dockerfile建立
+雖然Docker可以當虛擬機操作, 但Docker的主要目的是將程序的環境做腳本化。 當我們完成一個專案, 且需要做部屬時, 會使用Dockerfile技術, 建立該專案運行的環境, 並將應用程式內容置入該環境中, 整合成為image。 日後只需要將該專案的image建立成container, 即可快速部屬出應用程式。
+
+以下將列出撰寫Dockerfile常用的幾個指令
+
+Example: 
+```dockerfile
+# Use an official Python runtime as a parent image
+FROM python:3.7-slim
+
+# Record the maintainer information
+MAINTAINER John john@myemail.com
+
+# Set the working directory to /app
+WORKDIR /app
+
+# Copy the current directory contents into the container at /app
+COPY . /app
+
+# Install any needed packages specified in requirements.txt
+RUN apt-get update && apt-get upgrade -y && pip install pip -U && pip install -r requirements.txt
+
+# Make port 80 available to the world outside this container
+EXPOSE 80
+
+# Define environment variable
+ENV NAME World
+
+# Run app.py when the container launches
+CMD ["python", "app.py"]
+```
+
+`FROM`：做為基底所使用到的Docker Image名稱, 如建立時無預載, 會自動從官方的repository下載
+
+`MAINTAINER`：留下撰寫和維護Dockerfile的負責人姓名和聯絡資訊
+
+`WORKDIR`：創立工作目錄
+
+`COPY`：複製資料至指定目錄, 用於將本機端專案放置至docker內
+
+`RUN`：執行Linux指令, 安裝和設定Image所需程序
+
+`EXPOSE`：設定docker端的對外端口, 執行docker run 時可將本機端對接此端口
+
+`ENV`：設定環境變數
+
+`CMD`：執行docker run 時的預設指令
+
+---
+
+## 四、 Docker簡單測試
+為測試Docker on Raspberry Pi, 可依循以下步驟進行驗證
+
+### (一) 驗證測試
+#### 1. OS環境架設
+根據 [環境架構](#二、-環境架構), 將OS燒錄至樹莓派內, 並做好相關設定
+
+#### 2. 檔案載入
+將此專案app資料夾內的檔案存放到樹莓派內, 可使用WinSCP、FTP、git clone等方式, 連同app資料夾置於家目錄底下`~/app`
+
+#### 3. 建立Image
+app資料夾內含有[(三) Dockerfile建立](#(三)-Dockerfile建立)的Dockerfile Example範例, 使用指令 `docker build -t test ~/app` 建立image
+
+#### 4. 建立並執行Container
+執行指令 `docker run -d -p 80:80 test` , 啟動網頁服務 
+
+#### 5. 連線確認
+開啟瀏覽器輸入樹莓派ip位置, 確認畫面是否出現 **Hello World!**
